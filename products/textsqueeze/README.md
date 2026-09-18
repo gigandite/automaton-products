@@ -148,13 +148,15 @@ marker for the rest.
 
 ## Status and limitations
 
-Experimental v0.3 source release. 19 local tests pass (5 text-mode + 5
-json-mode + 9 CI-log/ANSI/progress-bar). No real customer or revenue
+Experimental v0.3 source release. 20 local tests pass (5 text-mode + 5
+json-mode + 9 CI-log/ANSI/progress-bar + 1 browser-core integration). No real customer or revenue
 validation has been completed. Token counts are character-based estimates,
 not provider tokenization or verified cost savings. The target is not a
 hard limit: omission markers and JSON formatting can exceed it. Content may
 be lost, including important information; always keep originals and review
-the output. No payment or donation channel is connected yet.
+the output. A pay-what-you-want Support Edition is available on
+[Gumroad](https://gigandite.gumroad.com/l/textsqueeze-support); the same MIT
+source remains free on GitHub.
 
 ## License
 
