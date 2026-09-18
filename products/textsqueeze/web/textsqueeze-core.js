@@ -47,6 +47,7 @@
     if (/^\s*at\s+/.test(line)) score -= 0.5;
     if (/^-{3,}|^={3,}|^\*{3,}/.test(trimmed)) score -= 1;
     if (trimmed.length > 300) score -= 1;
+    if (isProgressLine(trimmed)) score -= 2;
     return score;
   }
 
@@ -54,7 +55,7 @@
     const seen = new Map();
     const out = [];
     for (const line of lines) {
-      const key = line.trim();
+      const key = stripTimestampPrefix(line).trim();
       if (!key) { out.push({ line, dupCount: 0 }); continue; }
       if (seen.has(key)) {
         seen.get(key).dupCount++;
@@ -64,6 +65,31 @@
       seen.set(key, entry);
       out.push(entry);
     }
+    return out;
+  }
+
+  function collapseProgressLines(lines) {
+    const out = [];
+    let run = [];
+    function flush() {
+      if (run.length === 0) return;
+      if (run.length === 1) { out.push(run[0]); }
+      else {
+        const last = run[run.length - 1];
+        out.push({ line: last.line + '  (progress line x' + run.length + ', collapsed)', dupCount: 0 });
+      }
+      run = [];
+    }
+    for (const entry of lines) {
+      const text = entry.line != null ? entry.line : entry;
+      if (isProgressLine(text)) {
+        run.push(entry);
+      } else {
+        flush();
+        out.push(entry);
+      }
+    }
+    flush();
     return out;
   }
 
@@ -90,13 +116,17 @@
     opts = opts || {};
     const maxTokens = opts.maxTokens || 2000;
     const doDedupe = opts.dedupe !== false;
+    const doStripAnsi = opts.stripAnsi !== false;
+    const doCollapseProgress = opts.collapseProgress !== false;
     const keepFrames = opts.keepStackFrames != null ? opts.keepStackFrames : 3;
 
     const originalTokens = estimateTokens(input);
-    const rawLines = input.split(/\r?\n/);
+    const workingInput = doStripAnsi ? stripAnsi(input) : input;
+    const rawLines = workingInput.split(/\r?\n/);
 
     let entries = rawLines.map(function (l) { return { line: l, dupCount: 0 }; });
     if (doDedupe) entries = dedupeLines(rawLines);
+    if (doCollapseProgress) entries = collapseProgressLines(entries);
     entries = compressStackTraces(entries, keepFrames);
 
     entries = entries.map(function (e) {

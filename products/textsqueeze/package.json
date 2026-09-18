@@ -7,7 +7,7 @@
     "textsqueeze": "bin/textsqueeze.js"
   },
   "scripts": {
-    "test": "node test/test.js && node test/test-json.js && node test/test-ci-log.js"
+    "test": "node test/test.js && node test/test-json.js && node test/test-ci-log.js && node test/test-web.js"
   },
   "keywords": [
     "llm",

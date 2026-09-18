@@ -64,6 +64,17 @@
     <div>
       <button id="sample" style="background:#555">예시 붙여넣기</button>
     </div>
+    <div>
+      <button id="sampleCi" style="background:#555">CI 로그 예시</button>
+    </div>
+  </div>
+  <div class="row" id="ciOptions" style="display:flex; gap:20px;">
+    <label style="display:flex; align-items:center; gap:6px; font-size:13px; margin:0;">
+      <input type="checkbox" id="stripAnsi" checked> ANSI 컬러 코드 제거
+    </label>
+    <label style="display:flex; align-items:center; gap:6px; font-size:13px; margin:0;">
+      <input type="checkbox" id="collapseProgress" checked> 진행률 줄 압축 (progress bar)
+    </label>
   </div>
 
   <div class="warn">
@@ -95,7 +106,7 @@
 </main>
 <footer>
   textsqueeze web demo · 소스: <a href="https://github.com/gigandite/automaton-products/tree/main/products/textsqueeze" target="_blank" rel="noopener">GitHub</a> ·
-  무료·오픈소스(MIT) · 서버 전송 없음
+  무료·오픈소스(MIT) · 서버 전송 없음 · v0.3.0: CI 로그 모드(ANSI 제거 + 진행률 줄 압축) 추가
 </footer>
 
 <script src="textsqueeze-core.js"></script>
@@ -127,18 +138,43 @@
     })
   }, null, 2);
 
+  var sampleCiLog = (function () {
+    var lines = ['\u001b[32m==> Building project\u001b[0m'];
+    for (var i = 1; i <= 40; i++) {
+      lines.push('Downloading dependencies... ' + i + '%');
+    }
+    lines.push('2024-03-01T10:00:01.000Z INFO installing packages');
+    lines.push('2024-03-01T10:00:02.123Z INFO installing packages');
+    lines.push('2024-03-01T10:00:03.456Z INFO installing packages');
+    lines.push('\u001b[31m2024-03-01T10:00:04Z ERROR build failed: TypeScript error TS2322\u001b[0m');
+    lines.push('    at compile (tsc.js:120:15)');
+    lines.push('    at build (build.js:45:9)');
+    lines.push('    at async main (index.js:10:3)');
+    lines.push('2024-03-01T10:00:05Z INFO exiting with code 1');
+    return lines.join('\n');
+  })();
+
   var $ = function (id) { return document.getElementById(id); };
   var modeEl = $('mode'), maxTokensEl = $('maxTokens'), inputEl = $('input'),
-      outputEl = $('output'), statsEl = $('stats'), runBtn = $('run'), sampleBtn = $('sample');
+      outputEl = $('output'), statsEl = $('stats'), runBtn = $('run'), sampleBtn = $('sample'),
+      sampleCiBtn = $('sampleCi'), ciOptionsEl = $('ciOptions'),
+      stripAnsiEl = $('stripAnsi'), collapseProgressEl = $('collapseProgress');
 
   sampleBtn.addEventListener('click', function () {
     inputEl.value = modeEl.value === 'json' ? sampleJson : sampleText;
+  });
+
+  sampleCiBtn.addEventListener('click', function () {
+    modeEl.value = 'text';
+    inputEl.value = sampleCiLog;
+    ciOptionsEl.style.display = 'flex';
   });
 
   modeEl.addEventListener('change', function () {
     inputEl.placeholder = modeEl.value === 'json'
       ? '여기에 JSON을 붙여넣으세요...'
       : '여기에 로그나 텍스트를 붙여넣으세요...';
+    ciOptionsEl.style.display = modeEl.value === 'json' ? 'none' : 'flex';
   });
 
   runBtn.addEventListener('click', function () {
@@ -157,7 +193,11 @@
       if (modeEl.value === 'json') {
         result = TextSqueeze.squeezeJson(text, { maxTokens: maxTokens, pretty: true });
       } else {
-        result = TextSqueeze.squeeze(text, { maxTokens: maxTokens });
+        result = TextSqueeze.squeeze(text, {
+          maxTokens: maxTokens,
+          stripAnsi: stripAnsiEl.checked,
+          collapseProgress: collapseProgressEl.checked
+        });
       }
       outputEl.value = result.output;
       statsEl.style.display = 'block';
