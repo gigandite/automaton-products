@@ -4,4 +4,8 @@
     <loc>https://automaton-products.pages.dev/</loc>
     <changefreq>weekly</changefreq>
   </url>
+  <url>
+    <loc>https://automaton-products.pages.dev/advertise.html</loc>
+    <changefreq>monthly</changefreq>
+  </url>
 </urlset>

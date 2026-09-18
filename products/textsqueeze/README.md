@@ -161,3 +161,10 @@ source remains free on GitHub.
 ## License
 
 MIT
+
+## Direct sponsor advertising
+
+One privacy-preserving text sponsor slot is available for developer-relevant
+products. The introductory price is US$10 for 30 days, with no pageview,
+click, conversion, or sales guarantee. See the public
+[advertising terms and application](https://automaton-products.pages.dev/advertise.html).
