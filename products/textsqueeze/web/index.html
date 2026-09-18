@@ -76,8 +76,15 @@
       <textarea id="input" placeholder="여기에 로그나 JSON을 붙여넣으세요..."></textarea>
     </div>
     <div>
-      <div class="colhead">결과</div>
+      <div class="colhead" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>결과</span>
+        <span>
+          <button id="copyBtn" style="padding:4px 10px; font-size:12px; background:#444;">복사하기</button>
+          <button id="downloadBtn" style="padding:4px 10px; font-size:12px; background:#444;">다운로드</button>
+        </span>
+      </div>
       <textarea id="output" readonly placeholder="줄이기 버튼을 누르면 여기에 결과가 나옵니다."></textarea>
+      <div id="copyMsg" style="font-size:12px; color:#0a7a3d; margin-top:4px; display:none;"></div>
     </div>
   </div>
 
@@ -162,6 +169,46 @@
       statsEl.textContent = (modeEl.value === 'json' ? 'JSON 파싱 실패: ' : '처리 실패: ') + e.message;
       outputEl.value = '';
     }
+  });
+
+  var copyBtn = $('copyBtn'), downloadBtn = $('downloadBtn'), copyMsg = $('copyMsg');
+
+  function flashMsg(text) {
+    copyMsg.textContent = text;
+    copyMsg.style.display = 'block';
+    setTimeout(function () { copyMsg.style.display = 'none'; }, 2000);
+  }
+
+  copyBtn.addEventListener('click', function () {
+    if (!outputEl.value) { flashMsg('복사할 결과가 없습니다.'); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(outputEl.value).then(function () {
+        flashMsg('복사했습니다.');
+      }).catch(function () {
+        outputEl.select();
+        document.execCommand('copy');
+        flashMsg('복사했습니다.');
+      });
+    } else {
+      outputEl.select();
+      document.execCommand('copy');
+      flashMsg('복사했습니다.');
+    }
+  });
+
+  downloadBtn.addEventListener('click', function () {
+    if (!outputEl.value) { flashMsg('다운로드할 결과가 없습니다.'); return; }
+    var ext = modeEl.value === 'json' ? 'json' : 'txt';
+    var blob = new Blob([outputEl.value], { type: 'text/plain;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'textsqueeze-result.' + ext;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    flashMsg('다운로드했습니다.');
   });
 })();
 </script>
