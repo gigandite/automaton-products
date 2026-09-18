@@ -2,6 +2,9 @@
 
 Reduce logs, JSON dumps, and long text toward an estimated LLM token budget —
 keeps errors/warnings and unique content, drops noise and duplicate lines.
+Also strips ANSI color codes and collapses repeated CI progress-bar/percent
+spam, so pasting raw CI build logs (GitHub Actions, GitLab CI, Jenkins) into
+a prompt doesn't waste tokens on escape codes and download percentages.
 
 No API calls, no ML model, no network dependency. Pure deterministic
 heuristics. Performance on very large files has not been measured.
@@ -10,10 +13,13 @@ heuristics. Performance on very large files has not been measured.
 
 Pasting a 5,000-line log file (or a huge API JSON response) into an LLM
 prompt burns tokens (= money) on repeated boilerplate while the one `error`
-field that actually matters might get truncated or buried. `textsqueeze`
-scores content by importance, keeps what matters, deduplicates repeats, and
-compresses long stack traces / long arrays — all before you pay for those
-tokens.
+field that actually matters might get truncated or buried. CI logs add
+their own noise on top: ANSI color codes, timestamp prefixes on every line,
+and 50-line runs of `Downloading... 12%` / `13%` / `14%` ... `textsqueeze`
+scores content by importance, keeps what matters, deduplicates repeats
+(including timestamp-prefixed duplicates), strips ANSI codes, collapses
+progress-bar spam, and compresses long stack traces / long arrays — all
+before you pay for those tokens.
 
 ## Try from source
 
@@ -37,6 +43,9 @@ textsqueeze app.log --max-tokens=1000
 
 # From stdin
 cat app.log | textsqueeze --max-tokens=500 --stats
+
+# A raw CI build log (ANSI colors + progress-bar spam handled automatically)
+textsqueeze ci-build.log --max-tokens=800 --stats
 ```
 
 ### JSON mode (structure-aware)
@@ -58,6 +67,8 @@ textsqueeze response.json --json-mode --max-tokens=500 --stats --pretty
 - `--max-tokens=N` — target token budget (default: 2000)
 - `--keep-frames=N` — stack trace frames to keep per exception, text mode only (default: 3)
 - `--no-dedupe` — disable duplicate-line collapsing, text mode only
+- `--no-strip-ansi` — keep raw ANSI color/escape codes instead of stripping them, text mode only
+- `--no-collapse-progress` — do not collapse repeated progress-bar/percent lines, text mode only
 - `--json-mode` — treat input as JSON and prune structurally (see above)
 - `--array-edge=N` — items to keep at each end of long arrays, json-mode only (default: 3)
 - `--pretty` — pretty-print JSON output, json-mode only
@@ -68,12 +79,21 @@ textsqueeze response.json --json-mode --max-tokens=500 --stats --pretty
 ## How it works
 
 ### Text mode
-1. **Dedupe**: identical lines are collapsed to one, annotated `(xN repeated)`.
-2. **Stack trace compression**: consecutive `at ...` frames beyond the first
+1. **ANSI stripping**: color/escape codes (`\x1b[...m`) common in CI console
+   output are removed before scoring, so they don't inflate line length or
+   break duplicate detection.
+2. **Progress-bar collapsing**: consecutive lines matching a percentage
+   (`45%`), byte-count (`12MB/103MB`), or ASCII bar (`###----`) pattern are
+   collapsed into a single line, annotated `(progress line xN, collapsed)`.
+3. **Dedupe**: identical lines — after stripping common timestamp prefixes
+   like `2024-01-15T10:23:45.123Z` or `[10:23:45]` — are collapsed to one,
+   annotated `(xN repeated)`.
+4. **Stack trace compression**: consecutive `at ...` frames beyond the first
    N are replaced with `... (stack trace truncated)`.
-3. **Scoring**: each remaining line is scored — `error`/`exception`/`fatal`
-   score high, `warn` scores medium, separator lines and huge blobs score low.
-4. **Budget-fit selection**: highest-scoring lines are kept, in original
+5. **Scoring**: each remaining line is scored — `error`/`exception`/`fatal`
+   score high, `warn` scores medium, separator lines, huge blobs, and
+   progress-bar lines score low.
+6. **Budget-fit selection**: highest-scoring lines are kept, in original
    order, until the token budget is filled. Gaps are marked `[...omitted...]`.
 
 ### JSON mode
@@ -103,6 +123,16 @@ $ textsqueeze app.log --max-tokens=300 --stats
 [textsqueeze] original=41083tok output=287tok ratio=0.7% dropped_lines=2985
 ```
 
+**CI log mode**: a build log with ANSI-colored output and a 50-line
+`Downloading... N%` progress run, plus one real failure:
+
+```
+$ textsqueeze ci-build.log --max-tokens=200 --stats
+Downloading dependency... 100%  (progress line x50, collapsed)
+ERROR: build failed
+[textsqueeze] original=612tok output=14tok ratio=2.3% dropped_lines=1
+```
+
 **JSON mode**: API error response with a 3000-char internal trace ID and a
 300-item user array (~13,000 estimated tokens):
 
@@ -118,12 +148,13 @@ marker for the rest.
 
 ## Status and limitations
 
-Experimental v0.2 source release. Ten local tests pass. No real customer
-or revenue validation has been completed. Token counts are character-based
-estimates, not provider tokenization or verified cost savings. The target is
-not a hard limit: omission markers and JSON formatting can exceed it.
-Content may be lost, including important information; always keep originals
-and review the output. No payment or donation channel is connected yet.
+Experimental v0.3 source release. 19 local tests pass (5 text-mode + 5
+json-mode + 9 CI-log/ANSI/progress-bar). No real customer or revenue
+validation has been completed. Token counts are character-based estimates,
+not provider tokenization or verified cost savings. The target is not a
+hard limit: omission markers and JSON formatting can exceed it. Content may
+be lost, including important information; always keep originals and review
+the output. No payment or donation channel is connected yet.
 
 ## License
 

@@ -1,14 +1,23 @@
 {
   "name": "textsqueeze",
-  "version": "0.2.0",
-  "description": "Squeeze logs, JSON, and text down to a token budget for LLM prompts - keeps the important parts, drops the noise.",
+  "version": "0.3.0",
+  "description": "Squeeze logs, JSON, and text down to a token budget for LLM prompts - keeps the important parts, drops the noise. Now strips ANSI color codes and collapses CI progress-bar spam.",
   "main": "src/index.js",
   "bin": {
     "textsqueeze": "bin/textsqueeze.js"
   },
   "scripts": {
-    "test": "node test/test.js && node test/test-json.js"
+    "test": "node test/test.js && node test/test-json.js && node test/test-ci-log.js"
   },
-  "keywords": ["llm", "tokens", "prompt", "compression", "cli", "json"],
+  "keywords": [
+    "llm",
+    "tokens",
+    "prompt",
+    "compression",
+    "cli",
+    "json",
+    "ci",
+    "logs"
+  ],
   "license": "MIT"
 }

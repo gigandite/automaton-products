@@ -10,12 +10,43 @@ function charsForTokenBudget(tokens) {
   return tokens * 4;
 }
 
+// Strip ANSI escape codes (color codes, cursor movement) common in CI logs
+// (GitHub Actions, GitLab CI, Jenkins console output, etc).
+const ANSI_RE = /\x1b\[[0-9;?]*[a-zA-Z]/g;
+function stripAnsi(line) {
+  return line.replace(ANSI_RE, '');
+}
+
+// Strip common CI timestamp prefixes so duplicate-detection and scoring see
+// the actual content instead of a unique-per-line timestamp.
+// Handles: "2024-01-15T10:23:45.123Z ", "[10:23:45] ", "10:23:45.123 "
+const TIMESTAMP_PREFIX_RE = /^(\[?\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?Z?\]?\s+|\[\d{2}:\d{2}:\d{2}(\.\d+)?\]\s+)/;
+function stripTimestampPrefix(line) {
+  return line.replace(TIMESTAMP_PREFIX_RE, '');
+}
+
+// Detect CI progress-bar / spinner noise lines that repeat with only a
+// percentage or byte-count changing, e.g.:
+//   "Downloading... 12%"  "Downloading... 45%"  "Downloading... 98%"
+//   "##########-----  62.3MB/103MB"
+const PROGRESS_RE = /(\d+%|\d+(\.\d+)?\s?[KMG]?B\/\d+(\.\d+)?\s?[KMG]?B|^[#=\-.\s]{10,}$)/;
+function isProgressLine(line) {
+  return PROGRESS_RE.test(line.trim());
+}
+
+// Normalize a line for duplicate/progress-group detection: strip timestamp,
+// ansi codes, and any digits (so "62%" and "98%" group together).
+function normalizeForGrouping(line) {
+  return stripTimestampPrefix(stripAnsi(line)).replace(/\d+(\.\d+)?/g, '#').trim();
+}
+
 // Split text into logical lines, scoring each line by "informativeness".
 // Heuristics (no ML, no network calls — deterministic and fast):
 //  - JSON keys/error/warn/exception lines score higher
 //  - Duplicate/near-duplicate lines get suppressed after first occurrence
 //  - Very long repeated whitespace/separators score lower
 //  - Stack trace frames beyond the first few are compressed
+//  - CI progress-bar spam is collapsed to one summary line
 function scoreLine(line) {
   let score = 1;
   const trimmed = line.trim();
@@ -25,64 +56,91 @@ function scoreLine(line) {
   if (/^\s*at\s+/.test(line)) score -= 0.5; // stack frame noise
   if (/^-{3,}|^={3,}|^\*{3,}/.test(trimmed)) score -= 1; // separators
   if (trimmed.length > 300) score -= 1; // very long lines often blobs
+  if (isProgressLine(trimmed)) score -= 3; // progress bars / download % spam
   return score;
 }
 
-function dedupeLines(lines) {
-  const seen = new Map();
-  const out = [];
+function squeeze(text, opts = {}) {
+  const {
+    maxTokens = 2000,
+    dedupe = true,
+    keepStackFrames = 3,
+    stripAnsiCodes = true,
+    collapseProgress = true
+  } = opts;
+
+  const originalTokens = estimateTokens(text);
+  let rawLines = text.split(/\r?\n/);
+
+  // Preprocess: strip ANSI color codes (CI console output noise).
+  if (stripAnsiCodes) {
+    rawLines = rawLines.map(stripAnsi);
+  }
+
+  // Collapse consecutive progress-bar / spinner lines into a single
+  // representative line (keeps the last one, which usually shows the
+  // final % or completed size) — common in CI build/download output.
+  if (collapseProgress) {
+    const collapsed = [];
+    let progressRun = [];
+    const flushRun = () => {
+      if (progressRun.length === 0) return;
+      if (progressRun.length === 1) {
+        collapsed.push(progressRun[0]);
+      } else {
+        collapsed.push(`${progressRun[progressRun.length - 1]}  (progress line x${progressRun.length}, collapsed)`);
+      }
+      progressRun = [];
+    };
+    for (const line of rawLines) {
+      if (isProgressLine(line.trim())) {
+        progressRun.push(line);
+      } else {
+        flushRun();
+        collapsed.push(line);
+      }
+    }
+    flushRun();
+    rawLines = collapsed;
+  }
+
+  const lines = rawLines;
+
+  // Compress consecutive stack trace frames beyond keepStackFrames.
+  const compressedLines = [];
+  let stackRun = 0;
   for (const line of lines) {
-    const key = line.trim();
-    if (!key) { out.push({ line, dupCount: 0 }); continue; }
-    if (seen.has(key)) {
-      seen.get(key).dupCount++;
+    if (/^\s*at\s+/.test(line)) {
+      stackRun += 1;
+      if (stackRun <= keepStackFrames) {
+        compressedLines.push(line);
+      } else if (stackRun === keepStackFrames + 1) {
+        compressedLines.push('  ... (stack trace truncated)');
+      }
       continue;
     }
-    const entry = { line, dupCount: 0 };
-    seen.set(key, entry);
-    out.push(entry);
+    stackRun = 0;
+    compressedLines.push(line);
   }
-  return out;
-}
 
-function compressStackTraces(lines, keepFrames = 3) {
-  const out = [];
-  let frameRun = 0;
-  for (const line of lines) {
-    const isFrame = /^\s*at\s+/.test(line.line || line);
-    const text = line.line || line;
-    if (isFrame) {
-      frameRun++;
-      if (frameRun <= keepFrames) out.push(line);
-      else if (frameRun === keepFrames + 1) out.push({ line: '    ... (stack trace truncated)', dupCount: 0 });
-    } else {
-      frameRun = 0;
-      out.push(line);
+  // Dedupe: identical lines (after stripping timestamp prefixes, since CI
+  // logs often prefix every line with a unique timestamp) collapse to one,
+  // annotated with repeat count.
+  let entries = compressedLines.map(line => ({ line, dupCount: 0 }));
+  if (dedupe) {
+    const deduped = [];
+    let prevKey = null;
+    for (const entry of entries) {
+      const key = normalizeForGrouping(entry.line);
+      if (key && key === prevKey && deduped.length > 0) {
+        deduped[deduped.length - 1].dupCount += 1;
+      } else {
+        deduped.push({ ...entry });
+        prevKey = key;
+      }
     }
+    entries = deduped;
   }
-  return out;
-}
-
-/**
- * Squeeze arbitrary text down to fit within a token budget.
- * @param {string} input - raw text (logs, JSON, prose, etc.)
- * @param {object} opts
- * @param {number} opts.maxTokens - target token budget (default 2000)
- * @param {boolean} opts.dedupe - collapse duplicate lines (default true)
- * @param {number} opts.keepStackFrames - stack frames to keep per trace (default 3)
- * @returns {{ output: string, originalTokens: number, outputTokens: number, ratio: number, droppedLines: number }}
- */
-function squeeze(input, opts = {}) {
-  const maxTokens = opts.maxTokens || 2000;
-  const doDedupe = opts.dedupe !== false;
-  const keepFrames = opts.keepStackFrames != null ? opts.keepStackFrames : 3;
-
-  const originalTokens = estimateTokens(input);
-  const rawLines = input.split(/\r?\n/);
-
-  let entries = rawLines.map(l => ({ line: l, dupCount: 0 }));
-  if (doDedupe) entries = dedupeLines(rawLines);
-  entries = compressStackTraces(entries, keepFrames);
 
   // annotate dup counts back into visible text
   entries = entries.map(e => {
@@ -143,4 +201,4 @@ function squeeze(input, opts = {}) {
   };
 }
 
-module.exports = { squeeze, estimateTokens };
+module.exports = { squeeze, estimateTokens, stripAnsi, isProgressLine };
