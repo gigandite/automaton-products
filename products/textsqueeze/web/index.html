@@ -43,18 +43,25 @@
   .sponsor { font-size:12px; color:#555; margin:8px 0 0; }
   nav { display:flex; flex-wrap:wrap; gap:12px; margin:0 0 18px; font-size:13px; }
   nav a { text-decoration:none; }
+
+  .reading { margin-top:40px; padding-top:24px; border-top:1px solid #ddd; line-height:1.75; }
+  .reading h2 { font-size:21px; } .reading h3 { font-size:17px; }
+  .reading li { margin:8px 0; } .reading details { border-bottom:1px solid #ddd; padding:12px 0; }
+  .reading summary { cursor:pointer; font-weight:600; } .reading pre { white-space:pre-wrap; overflow-wrap:anywhere; background:#f5f7fa; padding:14px; font-size:12px; max-height:360px; overflow:auto; }
+  .reading .cols > * { min-width:0; } .reading a { overflow-wrap:anywhere; }
+  :focus-visible { outline:3px solid #2563eb; outline-offset:3px; }
 </style>
 </head>
 <body>
 <header>
-  <nav aria-label="주요 메뉴"><a href="/">도구</a><a href="/guides.html">사용 가이드</a><a href="/about.html">소개</a><a href="/privacy.html">개인정보처리방침</a></nav>
+  <nav aria-label="주요 메뉴"><a href="/">도구</a><a href="/guides">사용 가이드</a><a href="/about">소개</a><a href="/privacy">개인정보처리방침</a></nav>
   <h1>textsqueeze</h1>
   <div class="sub">
     긴 로그·텍스트·JSON을 원하는 토큰 예산에 맞게 줄여줍니다.
     ERROR/WARN 같은 중요한 줄, JSON의 error/status 같은 중요한 키는 최대한 남기고,
     반복되는 줄과 덜 중요한 내용을 먼저 지웁니다.
   </div>
-  <div class="privacy">🔒 이 페이지는 순수 브라우저 자바스크립트로 동작합니다. 붙여넣은 내용은 서버로 전송되지 않고, 어디에도 저장되지 않습니다.</div>
+  <div class="privacy">🔒 이 페이지는 순수 브라우저 자바스크립트로 동작합니다. 붙여넣은 내용은 서버로 전송되지 않고, 도구가 별도로 저장하지 않습니다.</div>
   <div class="support">ZIP으로 내려받거나 프로젝트를 후원할 수 있습니다.<a href="https://gigandite.gumroad.com/l/textsqueeze-support" target="_blank" rel="noopener">$1+ 지원판 받기</a></div>
   <div class="sponsor">개발자 도구 광고 한 자리 모집 중 · 첫 30일 $10 · 노출/클릭 보장 없음 · <a href="advertise.html">광고 안내</a></div>
 </header>
@@ -116,11 +123,113 @@
   </div>
 
   <div id="stats" class="stats" style="display:none"></div>
+
+<section class="reading" aria-labelledby="howto"><h2 id="howto">처음 사용하는 방법</h2>
+<p>긴 빌드 로그나 API 응답을 AI에게 질문하기 전에 반복을 줄이는 도구입니다. 원본 기록은 따로 보관하고 결과에서 오류와 요청 ID가 남았는지 확인하세요.</p>
+<ol><li>일반 로그는 <b>텍스트/로그</b>, JSON 응답은 <b>JSON</b> 모드를 고릅니다. 먼저 예시 버튼으로 시험해도 됩니다.</li>
+<li>입력창에 내용을 붙여넣고 목표 토큰 수를 정합니다. CI 로그에서는 ANSI 제거와 진행률 압축을 사용할 수 있습니다.</li>
+<li><b>줄이기</b>를 누른 뒤 원본과 결과를 비교합니다. 오류 원인이 빠졌다면 목표 값을 높이거나 필요한 줄을 직접 추가합니다.</li>
+<li>복사하거나 파일로 다운로드합니다. 외부 AI에 전달하기 전 비밀키·개인정보는 직접 지워야 합니다.</li></ol>
+<p><a href="/guides">로그·JSON을 안전하게 줄이는 자세한 가이드</a></p></section>
+<section class="reading" aria-labelledby="examples"><h2 id="examples">직접 실행한 압축 사례</h2>
+<p>아래는 설명을 위해 만든 예시 입력을 현재 브라우저 엔진 v0.3.0으로 실행한 결과입니다. 고객 로그나 실제 API 청구 절감 실적이 아닙니다. 숫자는 글자 수 기반 토큰 추정치입니다. <a href="/examples.json">전체 입력·설정·결과 JSON</a></p>
+<article><h3>CI 진행률과 색상 코드</h3><p>목표 120 · 원본 42 → 결과 31 토큰(추정)</p><div class="cols"><div><h4>입력</h4><pre>Downloading dependencies... 10%
+Downloading dependencies... 20%
+Downloading dependencies... 30%
+[ESC][31mERROR build failed: TS2322[ESC][0m
+    at compile (src/build.ts:42:9)</pre></div><div><h4>결과</h4><pre>Downloading dependencies... 30%  (progress line x3, collapsed)
+ERROR build failed: TS2322
+    at compile (src/build.ts:42:9)</pre></div></div><p>세 줄의 진행률을 마지막 상태와 반복 횟수로 합쳤습니다. 색상 코드는 제거하고 오류와 스택 위치를 보존했습니다. 입력의 [ESC] 표시는 보이지 않는 제어문자를 읽기 쉽게 바꾼 것입니다.</p></article><article><h3>반복 배열이 있는 JSON</h3><p>목표 180 · 원본 337 → 결과 188 토큰(추정)</p><div class="cols"><div><h4>입력</h4><pre>{
+  &quot;status&quot;: 500,
+  &quot;error&quot;: &quot;upstream timeout&quot;,
+  &quot;requestId&quot;: &quot;req-demo&quot;,
+  &quot;users&quot;: [
+    {
+      &quot;id&quot;: 1,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    },
+    {
+      &quot;id&quot;: 2,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    },
+    {
+      &quot;id&quot;: 3,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    },
+    {
+      &quot;id&quot;: 4,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    },
+    {
+      &quot;id&quot;: 5,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    },
+    {
+      &quot;id&quot;: 6,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    },
+    {
+      &quot;id&quot;: 7,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    },
+    {
+      &quot;id&quot;: 8,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    },
+    {
+      &quot;id&quot;: 9,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    },
+    {
+      &quot;id&quot;: 10,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    },
+    {
+      &quot;id&quot;: 11,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    },
+    {
+      &quot;id&quot;: 12,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    }
+  ]
+}</pre></div><div><h4>결과</h4><pre>{
+  &quot;status&quot;: 500,
+  &quot;error&quot;: &quot;upstream timeout&quot;,
+  &quot;requestId&quot;: &quot;req-demo&quot;,
+  &quot;users&quot;: [
+    {
+      &quot;id&quot;: 1,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    },
+    {
+      &quot;id&quot;: 2,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    },
+    {
+      &quot;id&quot;: 3,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    },
+    &quot;...[6 items omitted]...&quot;,
+    {
+      &quot;id&quot;: 10,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    },
+    {
+      &quot;id&quot;: 11,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    },
+    {
+      &quot;id&quot;: 12,
+      &quot;bio&quot;: &quot;demo demo demo demo demo demo demo demo demo demo demo demo &quot;
+    }
+  ]
+}</pre></div></div><p>오류 정보는 남고 배열 중간의 6개 항목이 생략됐습니다. 결과는 유효한 JSON이지만 생략 표시 문자열이 섞여 원본 스키마와 다릅니다. 목표 180보다 결과 188이 커졌으므로 엄격한 토큰 제한에는 별도 확인이 필요합니다.</p></article></section><section class="reading" aria-labelledby="faq"><h2 id="faq">자주 묻는 질문</h2><details><summary>ChatGPT·Claude의 정확한 토큰 수인가요?</summary><p>아닙니다. 글자 수를 4로 나눈 근사치입니다. 한국어, 코드, 사용하는 모델에 따라 차이가 나며 API 비용 절감을 보장하지 않습니다.</p></details><details><summary>목표 토큰 수를 넘을 수 있나요?</summary><p>네. JSON 서식과 생략 표시 때문에 목표를 넘을 수 있습니다. 요청에 엄격한 제한이 있다면 해당 모델의 토크나이저로 확인하고 여유를 두세요.</p></details><details><summary>중요한 오류는 모두 보존되나요?</summary><p>ERROR/WARN과 주요 JSON 키를 우선하지만 완전한 보존을 보장하지 않습니다. 앞뒤 문맥과 배열 중간의 예외가 사라질 수 있으므로 원본과 대조하세요.</p></details><details><summary>비밀키나 개인정보를 자동으로 지우나요?</summary><p>아니요. 압축 도구이며 개인정보 마스킹 도구가 아닙니다. 외부에 공유하기 전에 비밀값을 직접 치환하세요.</p></details><details><summary>로그를 업로드하거나 AI API를 호출하나요?</summary><p>도구의 압축 처리는 브라우저 안에서 실행되며 입력을 업로드하거나 유료 AI API를 호출하지 않습니다. 사이트 접속 정보에 관한 내용은 개인정보처리방침을 확인하세요.</p></details><details><summary>JSON 파싱 실패가 나오면 어떻게 하나요?</summary><p>키와 문자열의 큰따옴표, 쉼표, 닫는 괄호를 확인하세요. 주석이나 여러 JSON 객체가 줄마다 이어진 JSONL은 일반 JSON과 다릅니다. 원문 로그로 줄이려면 텍스트/로그 모드를 선택하세요.</p></details><details><summary>무료 버전과 지원판의 차이는 무엇인가요?</summary><p>웹 도구와 MIT 라이선스 소스는 무료입니다. Gumroad 지원판은 소스 ZIP과 설명서를 내려받으며 프로젝트를 후원하는 선택 사항입니다.</p></details></section><section class="reading" aria-labelledby="contact"><h2 id="contact">문의·오류 신고</h2><p><a href="https://github.com/gigandite/automaton-products/issues/new">GitHub에 문의 남기기</a>에서 모드, 목표 토큰 수, 브라우저, 기대한 결과와 실제 결과를 알려주세요. GitHub 계정이 필요하며 게시 내용은 공개됩니다. 실제 업무 로그 대신 비밀값을 제거한 작은 재현 예시를 사용하세요.</p><p>운영자: gigandite · <a href="/about">사이트 소개</a> · <a href="/privacy">개인정보처리방침</a></p></section>
 </main>
 <footer>
   textsqueeze web demo · 소스: <a href="https://github.com/gigandite/automaton-products/tree/main/products/textsqueeze" target="_blank" rel="noopener">GitHub</a> ·
   무료·오픈소스(MIT) · 서버 전송 없음 · v0.3.0: CI 로그 모드(ANSI 제거 + 진행률 줄 압축) 추가<br>
-  <a href="/about.html">운영자·사이트 소개</a> · <a href="/privacy.html">개인정보처리방침</a> · <a href="/terms.html">이용 안내</a> · <a href="/advertise">광고 안내</a>
+  <a href="/about">운영자·사이트 소개</a> · <a href="/privacy">개인정보처리방침</a> · <a href="/terms">이용 안내</a> · <a href="/advertise">광고 안내</a>
 </footer>
 
 <script src="textsqueeze-core.js"></script>

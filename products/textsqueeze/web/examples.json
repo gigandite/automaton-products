@@ -1,0 +1,33 @@
+[
+  {
+    "name": "CI 진행률과 색상 코드",
+    "mode": "text",
+    "input": "Downloading dependencies... 10%\nDownloading dependencies... 20%\nDownloading dependencies... 30%\n\u001b[31mERROR build failed: TS2322\u001b[0m\n    at compile (src/build.ts:42:9)",
+    "options": {
+      "maxTokens": 120
+    },
+    "result": {
+      "output": "Downloading dependencies... 30%  (progress line x3, collapsed)\nERROR build failed: TS2322\n    at compile (src/build.ts:42:9)",
+      "originalTokens": 42,
+      "outputTokens": 31,
+      "ratio": 0.7380952380952381,
+      "droppedLines": 0
+    }
+  },
+  {
+    "name": "반복 배열이 있는 JSON",
+    "mode": "json",
+    "input": "{\n  \"status\": 500,\n  \"error\": \"upstream timeout\",\n  \"requestId\": \"req-demo\",\n  \"users\": [\n    {\n      \"id\": 1,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    },\n    {\n      \"id\": 2,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    },\n    {\n      \"id\": 3,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    },\n    {\n      \"id\": 4,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    },\n    {\n      \"id\": 5,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    },\n    {\n      \"id\": 6,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    },\n    {\n      \"id\": 7,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    },\n    {\n      \"id\": 8,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    },\n    {\n      \"id\": 9,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    },\n    {\n      \"id\": 10,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    },\n    {\n      \"id\": 11,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    },\n    {\n      \"id\": 12,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    }\n  ]\n}",
+    "options": {
+      "maxTokens": 180,
+      "pretty": true
+    },
+    "result": {
+      "output": "{\n  \"status\": 500,\n  \"error\": \"upstream timeout\",\n  \"requestId\": \"req-demo\",\n  \"users\": [\n    {\n      \"id\": 1,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    },\n    {\n      \"id\": 2,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    },\n    {\n      \"id\": 3,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    },\n    \"...[6 items omitted]...\",\n    {\n      \"id\": 10,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    },\n    {\n      \"id\": 11,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    },\n    {\n      \"id\": 12,\n      \"bio\": \"demo demo demo demo demo demo demo demo demo demo demo demo \"\n    }\n  ]\n}",
+      "originalTokens": 337,
+      "outputTokens": 188,
+      "ratio": 0.5578635014836796,
+      "truncated": true
+    }
+  }
+]

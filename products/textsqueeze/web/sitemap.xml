@@ -8,8 +8,8 @@
     <loc>https://automaton-products.pages.dev/advertise</loc>
     <changefreq>monthly</changefreq>
   </url>
-  <url><loc>https://automaton-products.pages.dev/guides.html</loc><changefreq>monthly</changefreq></url>
-  <url><loc>https://automaton-products.pages.dev/about.html</loc><changefreq>monthly</changefreq></url>
-  <url><loc>https://automaton-products.pages.dev/privacy.html</loc><changefreq>yearly</changefreq></url>
-  <url><loc>https://automaton-products.pages.dev/terms.html</loc><changefreq>yearly</changefreq></url>
+  <url><loc>https://automaton-products.pages.dev/guides</loc><changefreq>monthly</changefreq></url>
+  <url><loc>https://automaton-products.pages.dev/about</loc><changefreq>monthly</changefreq></url>
+  <url><loc>https://automaton-products.pages.dev/privacy</loc><changefreq>yearly</changefreq></url>
+  <url><loc>https://automaton-products.pages.dev/terms</loc><changefreq>yearly</changefreq></url>
 </urlset>
