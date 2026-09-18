@@ -1,0 +1,51 @@
+name: Direct sponsor ad application
+description: Apply for the single TextSqueeze sponsor placement
+title: "[Sponsor] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This application is public. Do not include passwords, payment details, or private identity documents. Payment is requested only after the ad is approved.
+  - type: input
+    id: advertiser
+    attributes:
+      label: Advertiser or product name
+      placeholder: Example Developer Tool
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: HTTPS destination URL
+      placeholder: https://example.com/product
+    validations:
+      required: true
+  - type: textarea
+    id: copy
+    attributes:
+      label: Proposed ad copy
+      description: Maximum 90 characters. Plain text only.
+      placeholder: A short, factual description for developers.
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category
+      options:
+        - Developer tool
+        - Cloud or infrastructure
+        - Open source
+        - Education
+        - Other developer-relevant product
+    validations:
+      required: true
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Terms
+      options:
+        - label: I understand that US$10 covers one approved text placement for 30 days and does not guarantee views, clicks, conversions, or sales.
+          required: true
+        - label: The destination does not contain malware, adult content, gambling, deceptive downloads, or false earnings claims.
+          required: true
