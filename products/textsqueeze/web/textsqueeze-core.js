@@ -16,6 +16,27 @@
     return tokens * 4;
   }
 
+  // ---- CI log helpers (mirrors src/index.js v0.3.0) ----
+  function stripAnsi(str) {
+    return str.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
+  }
+
+  var TIMESTAMP_PREFIX_RE = /^(\[?\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(\.\d+)?Z?\]?\s*|\[\d{2}:\d{2}:\d{2}\]\s*)/;
+  function stripTimestampPrefix(line) {
+    return line.replace(TIMESTAMP_PREFIX_RE, '');
+  }
+
+  function isProgressLine(line) {
+    var t = line.trim();
+    if (!t) return false;
+    if (/^\d{1,3}%(\s|$)/.test(t)) return true;
+    if (/\.\.\.\s*\d{1,3}%\s*$/.test(t)) return true;
+    if (/\d{1,3}%/.test(t) && /(download|upload|progress|loading|extracting|compiling|building)/i.test(t)) return true;
+    if (/^\[?#+[-\s]*\]?\s*\d{0,3}%?$/.test(t)) return true;
+    if (/^\d+(\.\d+)?\s*(KB|MB|GB)\s*\/\s*\d+(\.\d+)?\s*(KB|MB|GB)/i.test(t)) return true;
+    return false;
+  }
+
   // ---- text/log mode (mirrors src/index.js) ----
   function scoreLine(line) {
     let score = 1;
