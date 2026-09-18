@@ -40,10 +40,13 @@
   .support { font-size:13px; color:#4c1d95; background:#f5f3ff; border:1px solid #d8b4fe; border-radius:8px; padding:10px 12px; margin: 10px 0; }
   .support a { display:inline-block; margin-left:6px; padding:6px 10px; border-radius:7px; background:#6d28d9; color:#fff; text-decoration:none; font-weight:700; }
   .sponsor { font-size:12px; color:#555; margin:8px 0 0; }
+  nav { display:flex; flex-wrap:wrap; gap:12px; margin:0 0 18px; font-size:13px; }
+  nav a { text-decoration:none; }
 </style>
 </head>
 <body>
 <header>
+  <nav aria-label="주요 메뉴"><a href="/">도구</a><a href="/guides.html">사용 가이드</a><a href="/about.html">소개</a><a href="/privacy.html">개인정보처리방침</a></nav>
   <h1>textsqueeze</h1>
   <div class="sub">
     긴 로그·텍스트·JSON을 원하는 토큰 예산에 맞게 줄여줍니다.
@@ -115,7 +118,8 @@
 </main>
 <footer>
   textsqueeze web demo · 소스: <a href="https://github.com/gigandite/automaton-products/tree/main/products/textsqueeze" target="_blank" rel="noopener">GitHub</a> ·
-  무료·오픈소스(MIT) · 서버 전송 없음 · v0.3.0: CI 로그 모드(ANSI 제거 + 진행률 줄 압축) 추가
+  무료·오픈소스(MIT) · 서버 전송 없음 · v0.3.0: CI 로그 모드(ANSI 제거 + 진행률 줄 압축) 추가<br>
+  <a href="/about.html">운영자·사이트 소개</a> · <a href="/privacy.html">개인정보처리방침</a> · <a href="/terms.html">이용 안내</a> · <a href="/advertise">광고 안내</a>
 </footer>
 
 <script src="textsqueeze-core.js"></script>

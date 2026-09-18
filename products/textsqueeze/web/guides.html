@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>로그·JSON을 안전하게 줄이는 실전 가이드</title><meta name="description" content="오류 단서를 보존하면서 애플리케이션 로그, CI 출력과 JSON을 프롬프트 예산에 맞게 줄이는 방법입니다.">
+<link rel="canonical" href="https://automaton-products.pages.dev/guides.html">
+<style>body{font-family:-apple-system,"Segoe UI",Roboto,sans-serif;max-width:780px;margin:48px auto;padding:0 20px;color:#171717;line-height:1.72}h1{line-height:1.25}h2{margin-top:38px}h3{margin-top:26px}a{color:#2563eb}pre{overflow:auto;background:#111827;color:#e5e7eb;padding:15px;border-radius:9px;font-size:13px}.note{background:#fff7df;border:1px solid #ead38a;padding:14px;border-radius:9px}.check{background:#eef6ff;border:1px solid #bed8f7;padding:14px;border-radius:9px}footer{margin-top:48px;padding-top:20px;border-top:1px solid #ddd;color:#666;font-size:14px}</style></head>
+<body><p><a href="/">← TextSqueeze 도구</a></p><h1>로그·JSON을 안전하게 줄이는 실전 가이드</h1>
+<p>압축의 목적은 글자 수만 줄이는 것이 아니라 문제를 다시 추적할 단서를 남기는 것입니다. 원본을 보관하고 민감정보를 지운 뒤 반복을 제거하고, 마지막에 압축본을 원본과 대조하는 순서가 안전합니다.</p>
+<h2>애플리케이션 로그</h2>
+<h3>1. 시간과 실행 환경을 고정한다</h3><p>장애가 발생한 시각, 요청 ID, 서비스와 배포 버전을 먼저 메모합니다. 여러 서비스 로그를 합친다면 각 묶음의 첫 줄에 서비스명과 시간대를 남기세요. 서로 다른 실행의 오류가 한 사건처럼 섞이는 일을 막을 수 있습니다.</p>
+<h3>2. 비밀값을 먼저 제거한다</h3><p>API 키, 세션 쿠키, Authorization 헤더, 이메일과 내부 주소는 압축 전에 치환합니다. 같은 비밀값이 반복된다고 해서 중복 제거가 보안을 해결해 주지는 않습니다. 예를 들어 Bearer 토큰 전체를 <code>[REDACTED]</code>로 바꿉니다.</p>
+<h3>3. 반복보다 최초 경고와 오류를 남긴다</h3>
+<pre>INFO retrying connection attempt=1
+INFO retrying connection attempt=2
+WARN retry budget nearly exhausted
+ERROR connection timeout request_id=req-42</pre>
+<p>모든 재시도 줄을 보존할 필요는 없지만 처음과 마지막 시도, 경고, 최종 오류는 남겨야 합니다. 최종 오류만 남기면 원인이 아니라 결과만 보일 수 있으므로 오류 직전의 경고도 확인하세요.</p>
+<div class="check"><strong>로그 검토 항목</strong><br>발생 시각 · 서비스/버전 · 요청 ID · 최초 경고 · 최초 오류 · 프로젝트 파일이 처음 등장하는 스택 줄 · 종료 코드</div>
+<h2>CI 실패 출력</h2>
+<p>CI 로그에는 설치 진행률, 캐시 메시지, ANSI 색상 코드와 후속 실패가 섞입니다. 마지막의 “exit 1”은 결과일 뿐 원인이 아닌 경우가 많습니다. ANSI 코드와 덮어쓰기 진행률을 제거하고 첫 컴파일 오류나 첫 테스트 assertion을 찾으세요.</p>
+<pre>Build started
+src/payment.ts(42,9): error TS2322
+npm ERR! Lifecycle script build failed
+Process completed with exit code 1</pre>
+<p>이 예시에서는 종료 코드보다 TypeScript 오류와 파일 위치가 우선입니다. 워크플로 이름, 커밋 SHA, 러너 운영체제, 언어와 패키지 관리자 버전도 같이 남기면 로컬과 CI의 차이를 비교할 수 있습니다.</p>
+<h2>큰 JSON 응답</h2>
+<p>질문을 먼저 정하고 그 질문을 판별하는 키를 고릅니다. 오류 조사라면 <code>status</code>, <code>error</code>, <code>message</code>, <code>requestId</code>, <code>timestamp</code>가 우선입니다. 배열은 전체 개수, 처음과 마지막 항목, 비정상 상태를 가진 항목을 남깁니다.</p>
+<pre>{
+  "status": 500,
+  "requestId": "req-42",
+  "users": "50개 중 대표 2개와 실패 항목 보존",
+  "error": "upstream timeout"
+}</pre>
+<p>다시 파싱할 목적이면 결과가 유효한 JSON인지 확인해야 합니다. 사람이 읽기만 한다면 생략 설명을 넣을 수 있지만 그 표현은 JSON 파서가 이해하지 못합니다. 긴 문자열은 오류 원인이 끝에 붙는 형식도 있으므로 앞부분만 자르지 말고 양쪽 문맥과 원래 길이를 기록하세요.</p>
+<div class="note"><strong>토큰 수 주의</strong><br>TextSqueeze의 글자 수 기반 토큰 값은 빠른 비교용 근사치입니다. 언어, 공백, 키 이름과 실제 모델에 따라 달라집니다. 제한에 딱 맞추지 말고 여유를 두며 중요한 작업은 원본과 대조하세요.</div>
+<h2>모델에 질문할 때 함께 적을 것</h2><p>압축본만 보내기보다 예상 상태, 실제 상태, 재현 횟수, 직전 변경, 가장 작은 재현 명령을 덧붙입니다. “배포 직후 시작”, “세 번 재시도 후 실패”, “같은 요청 ID에서만 발생”처럼 원본에서 확인한 사실을 적으면 빈칸을 추측하는 일을 줄일 수 있습니다.</p>
+<footer><a href="/about.html">사이트 소개</a> · <a href="/privacy.html">개인정보처리방침</a> · <a href="/terms.html">이용 안내</a></footer></body></html>
