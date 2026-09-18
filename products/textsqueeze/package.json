@@ -1,0 +1,14 @@
+{
+  "name": "textsqueeze",
+  "version": "0.2.0",
+  "description": "Squeeze logs, JSON, and text down to a token budget for LLM prompts - keeps the important parts, drops the noise.",
+  "main": "src/index.js",
+  "bin": {
+    "textsqueeze": "bin/textsqueeze.js"
+  },
+  "scripts": {
+    "test": "node test/test.js && node test/test-json.js"
+  },
+  "keywords": ["llm", "tokens", "prompt", "compression", "cli", "json"],
+  "license": "MIT"
+}
