@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>textsqueeze - 텍스트/로그를 토큰 예산에 맞게 줄이기</title>
+<style>
+  :root { --border:#ddd; --bg:#fafafa; --accent:#2563eb; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; margin:0; padding:0; background:#fff; color:#111; }
+  header { padding: 24px 20px 8px; max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color:#555; font-size:14px; line-height:1.5; }
+  main { max-width: 900px; margin: 0 auto; padding: 16px 20px 60px; }
+  .row { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end; margin-bottom:10px; }
+  label { font-size: 13px; color:#333; display:block; margin-bottom:4px; }
+  select, input[type=number] { padding:6px 8px; border:1px solid var(--border); border-radius:6px; font-size:14px; }
+  textarea { width:100%; min-height:220px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size:13px;
+    padding:10px; border:1px solid var(--border); border-radius:8px; background: var(--bg); resize: vertical; }
+  button { background: var(--accent); color:#fff; border:none; padding:10px 18px; border-radius:8px;
+    font-size:14px; cursor:pointer; font-weight:600; }
+  button:hover { background:#1d4ed8; }
+  button:disabled { background:#999; cursor:not-allowed; }
+  .stats { font-size:13px; color:#333; margin: 10px 0; padding:10px 12px; background:#f0f7ff; border-radius:8px; border:1px solid #cfe0fb; }
+  .stats b { color: var(--accent); }
+  .warn { font-size: 12px; color:#7a5b00; background:#fff7e0; border:1px solid #f0dca0; border-radius:6px; padding:8px 10px; margin: 10px 0; }
+  .cols { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+  @media (max-width: 760px) { .cols { grid-template-columns: 1fr; } }
+  .colhead { font-size:13px; font-weight:600; margin-bottom:6px; color:#333; }
+  footer { max-width:900px; margin: 0 auto; padding: 10px 20px 40px; color:#777; font-size:12px; }
+  a { color: var(--accent); }
+  .privacy { font-size:12px; color:#0a7a3d; background:#eafff0; border:1px solid #b8ecc8; border-radius:6px; padding:8px 10px; margin: 10px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>textsqueeze</h1>
+  <div class="sub">
+    긴 로그·텍스트·JSON을 원하는 토큰 예산에 맞게 줄여줍니다.
+    ERROR/WARN 같은 중요한 줄, JSON의 error/status 같은 중요한 키는 최대한 남기고,
+    반복되는 줄과 덜 중요한 내용을 먼저 지웁니다.
+  </div>
+  <div class="privacy">🔒 이 페이지는 순수 브라우저 자바스크립트로 동작합니다. 붙여넣은 내용은 서버로 전송되지 않고, 어디에도 저장되지 않습니다.</div>
+</header>
+<main>
+  <div class="row">
+    <div>
+      <label for="mode">모드</label>
+      <select id="mode">
+        <option value="text">텍스트/로그</option>
+        <option value="json">JSON</option>
+      </select>
+    </div>
+    <div>
+      <label for="maxTokens">목표 토큰 수</label>
+      <input type="number" id="maxTokens" value="500" min="10" step="10" style="width:100px">
+    </div>
+    <div>
+      <button id="run">줄이기 ▶</button>
+    </div>
+    <div>
+      <button id="sample" style="background:#555">예시 붙여넣기</button>
+    </div>
+  </div>
+
+  <div class="warn">
+    ⚠️ 토큰 수는 "글자 수 ÷ 4" 근사치입니다. 실제 LLM 토크나이저와 정확히 일치하지 않을 수 있습니다.
+    또한 이 도구는 결정론적 규칙(중복 제거, ERROR/WARN 우선, 긴 배열/문자열 축약)으로 내용을 줄이기 때문에
+    <b>중요한 내용이 함께 삭제될 수 있고</b>, 목표 토큰 수를 근소하게 넘거나 못 미칠 수 있습니다.
+    결과를 그대로 신뢰하지 말고 확인 후 사용하세요.
+  </div>
+
+  <div class="cols">
+    <div>
+      <div class="colhead">입력</div>
+      <textarea id="input" placeholder="여기에 로그나 JSON을 붙여넣으세요..."></textarea>
+    </div>
+    <div>
+      <div class="colhead">결과</div>
+      <textarea id="output" readonly placeholder="줄이기 버튼을 누르면 여기에 결과가 나옵니다."></textarea>
+    </div>
+  </div>
+
+  <div id="stats" class="stats" style="display:none"></div>
+</main>
+<footer>
+  textsqueeze web demo · 소스: <a href="https://github.com/gigandite/automaton-products/tree/main/products/textsqueeze" target="_blank" rel="noopener">GitHub</a> ·
+  무료·오픈소스(MIT) · 서버 전송 없음
+</footer>
+
+<script src="textsqueeze-core.js"></script>
+<script>
+(function () {
+  var sampleText = [
+    '2024-01-01T00:00:01Z INFO request handled path=/api/users id=1',
+    '2024-01-01T00:00:01Z INFO request handled path=/api/users id=2',
+    '2024-01-01T00:00:02Z INFO request handled path=/api/users id=3',
+    '2024-01-01T00:00:02Z INFO request handled path=/api/users id=4',
+    '2024-01-01T00:00:03Z WARN cache miss for key user:42',
+    '2024-01-01T00:00:04Z ERROR payment failed: card declined (customer=cus_123)',
+    '    at processPayment (payments.js:120:15)',
+    '    at handleCheckout (checkout.js:45:9)',
+    '    at async Router.handle (router.js:88:5)',
+    '    at async Server.emit (server.js:210:3)',
+    '    at async Server._onRequest (server.js:180:3)',
+    '2024-01-01T00:00:05Z INFO request handled path=/api/users id=5',
+    '2024-01-01T00:00:05Z INFO request handled path=/api/users id=6'
+  ].join('\n');
+
+  var sampleJson = JSON.stringify({
+    requestId: 'req-abc123',
+    timestamp: '2024-01-01T00:00:00Z',
+    status: 500,
+    error: 'upstream service unavailable: payment-gateway timed out',
+    users: Array.from({ length: 50 }, function (_, i) {
+      return { id: i, name: 'user' + i, bio: 'lorem ipsum '.repeat(5) };
+    })
+  }, null, 2);
+
+  var $ = function (id) { return document.getElementById(id); };
+  var modeEl = $('mode'), maxTokensEl = $('maxTokens'), inputEl = $('input'),
+      outputEl = $('output'), statsEl = $('stats'), runBtn = $('run'), sampleBtn = $('sample');
+
+  sampleBtn.addEventListener('click', function () {
+    inputEl.value = modeEl.value === 'json' ? sampleJson : sampleText;
+  });
+
+  modeEl.addEventListener('change', function () {
+    inputEl.placeholder = modeEl.value === 'json'
+      ? '여기에 JSON을 붙여넣으세요...'
+      : '여기에 로그나 텍스트를 붙여넣으세요...';
+  });
+
+  runBtn.addEventListener('click', function () {
+    var text = inputEl.value;
+    var maxTokens = parseInt(maxTokensEl.value, 10) || 500;
+
+    if (!text.trim()) {
+      statsEl.style.display = 'block';
+      statsEl.textContent = '입력이 비어 있습니다. 텍스트나 JSON을 붙여넣어 주세요.';
+      outputEl.value = '';
+      return;
+    }
+
+    try {
+      var result;
+      if (modeEl.value === 'json') {
+        result = TextSqueeze.squeezeJson(text, { maxTokens: maxTokens, pretty: true });
+      } else {
+        result = TextSqueeze.squeeze(text, { maxTokens: maxTokens });
+      }
+      outputEl.value = result.output;
+      statsEl.style.display = 'block';
+      var ratioPct = (result.ratio * 100).toFixed(1);
+      var extra = modeEl.value === 'json'
+        ? ('중요 내용 잘림 여부: ' + (result.truncated ? '있음 (일부 필드/항목이 생략되었습니다)' : '없음'))
+        : ('삭제된 줄 수: ' + result.droppedLines);
+      statsEl.innerHTML = '원본 <b>' + result.originalTokens + '</b> 토큰(추정) → 결과 <b>' + result.outputTokens +
+        '</b> 토큰(추정) · 압축률 <b>' + ratioPct + '%</b> · ' + extra;
+    } catch (e) {
+      statsEl.style.display = 'block';
+      statsEl.textContent = (modeEl.value === 'json' ? 'JSON 파싱 실패: ' : '처리 실패: ') + e.message;
+      outputEl.value = '';
+    }
+  });
+})();
+</script>
+</body>
+</html>
