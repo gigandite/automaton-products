@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>디지털 제품 런치 키트 — 정적 랜딩 페이지 + 가이드</title>
+<style>
+  :root { --ink:#1a1a2e; --accent:#4361ee; --bg:#f7f8fc; --card:#ffffff; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif; background:var(--bg); color:var(--ink); line-height:1.6; }
+  header { background:var(--ink); color:#fff; padding:3rem 1.5rem; text-align:center; }
+  header h1 { font-size:2rem; margin-bottom:.5rem; }
+  header p { opacity:.85; max-width:40rem; margin:0 auto; }
+  main { max-width:48rem; margin:0 auto; padding:2rem 1.5rem 4rem; }
+  section { background:var(--card); border-radius:12px; padding:1.5rem; margin-bottom:1.5rem; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+  h2 { font-size:1.25rem; margin-bottom:.75rem; color:var(--accent); }
+  ul { padding-left:1.25rem; }
+  li { margin-bottom:.4rem; }
+  code { background:#eef1f8; padding:.15rem .4rem; border-radius:4px; font-size:.9em; }
+  .note { background:#fff8e6; border-left:4px solid #f0b429; padding:.75rem 1rem; border-radius:0 8px 8px 0; margin-top:1rem; font-size:.95em; }
+  .cta { display:inline-block; margin-top:1rem; background:var(--accent); color:#fff; text-decoration:none; padding:.7rem 1rem; border-radius:8px; font-weight:700; }
+  footer { text-align:center; padding:1.5rem; font-size:.85rem; opacity:.6; }
+</style>
+</head>
+<body>
+<header>
+  <h1>디지털 제품 런치 키트</h1>
+  <p>정적 랜딩 페이지 템플릿, 게시 가이드, 라이선스 문구 템플릿으로 구성된 3파일 패키지입니다.</p>
+</header>
+<main>
+  <section>
+    <h2>패키지 구성</h2>
+    <ul>
+      <li><code>index.html</code> — 구매자가 직접 수정하는 정적 랜딩 페이지 템플릿 (YOUR ... 자리만 채우면 됩니다)</li>
+      <li><code>GUIDE.md</code> — 파일 구조, 수정 방법, 정적 호스팅 게시 절차</li>
+      <li><code>RIGHTS-TEMPLATE.md</code> — 제품 라이선스/권리 표기 문구 템플릿</li>
+    </ul>
+  </section>
+  <section>
+    <h2>누구를 위한 것인가요</h2>
+    <ul>
+      <li>디지털 제품(템플릿, 가이드, 소스 파일)을 정적 사이트로 처음 공개하려는 제작자</li>
+      <li>프레임워크 없이 단일 HTML 파일로 랜딩 페이지를 빠르게 세우고 싶은 사람</li>
+      <li>라이선스 문구를 어디서부터 써야 할지 모르는 초보 판매자</li>
+    </ul>
+  </section>
+  <section>
+    <h2>사용 방법</h2>
+    <ul>
+      <li><code>index.html</code>의 YOUR ... 부분을 제품 이름, 설명, 가격, 판매 링크로 교체합니다.</li>
+      <li><code>GUIDE.md</code>의 게시 절차를 따라 정적 호스팅에 올립니다.</li>
+      <li><code>RIGHTS-TEMPLATE.md</code>의 문구를 제품 라이선스에 맞게调整后 사용합니다.</li>
+    </ul>
+    <div class="note">구매 전에는 각 템플릿의 내용을 확인하고, 자신의 제품과 사용 조건에 맞게 수정하세요.</div>
+    <a class="cta" href="https://gigandite.gumroad.com/l/digital-product-launch-kit">Gumroad에서 $3에 구매하기</a>
+  </section>
+  <section>
+    <h2>검증 정보</h2>
+    <ul>
+      <li>파일 3개, SHA-256 해시는 <code>PACKAGE-MANIFEST.json</code>에 기록되어 있습니다.</li>
+      <li>해시 계산과 파일 존재 검사는 2026-09-19에 로컬에서 실행되었습니다.</li>
+    </ul>
+  </section>
+</main>
+<footer>디지털 제품 런치 키트 · 2026</footer>
+</body>
+</html>
