@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">TextSqueeze</title>
+  <desc id="desc">긴 로그와 JSON을 브라우저 안에서 줄이는 무료 도구</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#07152f"/>
+      <stop offset="1" stop-color="#174d8b"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="68" y="74" width="1064" height="482" rx="28" fill="#f7fbff"/>
+  <rect x="68" y="74" width="1064" height="70" rx="28" fill="#dbeafe"/>
+  <circle cx="112" cy="109" r="10" fill="#f87171"/><circle cx="144" cy="109" r="10" fill="#fbbf24"/><circle cx="176" cy="109" r="10" fill="#34d399"/>
+  <text x="124" y="246" font-family="Arial, sans-serif" font-weight="700" font-size="68" fill="#102a52">TextSqueeze</text>
+  <text x="124" y="316" font-family="Arial, sans-serif" font-size="34" fill="#355070">긴 로그 · CI 출력 · JSON을 간결하게</text>
+  <text x="124" y="370" font-family="Arial, sans-serif" font-size="27" fill="#526b85">브라우저 안에서 처리 · 입력 서버 전송 없음</text>
+  <rect x="124" y="424" width="274" height="72" rx="14" fill="#2563eb"/>
+  <text x="158" y="470" font-family="Arial, sans-serif" font-weight="700" font-size="28" fill="#ffffff">무료 웹 도구</text>
+  <g font-family="monospace" font-size="22" fill="#b9d7ff">
+    <text x="755" y="250">INFO  boot complete</text>
+    <text x="755" y="292">INFO  boot complete</text>
+    <text x="755" y="334">ERROR connection refused</text>
+    <text x="755" y="376">WARN  retrying connection</text>
+  </g>
+  <path d="M694 260v104" stroke="#60a5fa" stroke-width="8" stroke-linecap="round"/>
+  <path d="M674 344l20 22 20-22" fill="none" stroke="#60a5fa" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
